@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "StrokeYourBrush"
+description = "A playful client-side drawing and frame animation studio with alive wiggly brushes, timeline animation, and local exports."
+version = "1.0.0"
+id = "artifacts/stroke-your-brush"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21669
+
+[services.development]
+run = "pnpm --filter @workspace/stroke-your-brush run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/stroke-your-brush", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/stroke-your-brush/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21669"
+BASE_PATH = "/"

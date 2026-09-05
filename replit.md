@@ -1,6 +1,6 @@
-# [Project name]
+# StrokeYourBrush
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+StrokeYourBrush is a client-side creative studio for drawing alive wiggly marks and turning sketches into short frame animations.
 
 ## Run & Operate
 
@@ -22,15 +22,22 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/stroke-your-brush/src/App.tsx` — landing page, drawing workspace, animation workspace, canvas rendering, local persistence, and exports.
+- `artifacts/stroke-your-brush/src/index.css` — shared visual language, typography, motion, and responsive workspace styling.
+- `artifacts/stroke-your-brush/.replit-artifact/artifact.toml` — web artifact routing and workflow metadata.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Drawing data is stored as stroke points and serialized to JSON, keeping the app editable and portable without a backend.
+- The draw and animate modes share the same canvas/stroke model so brush behavior, selection, color, zoom, and export stay consistent.
+- Wiggly rendering is a requestAnimationFrame loop over stored points; the source stroke remains stable for undo, duplication, and reload.
+- Motion export uses the browser's MediaRecorder/canvas capture path to keep export local and offline-friendly.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Landing page with direct navigation into Draw and Animate modes.
+- Draw mode with eight animated brush personalities, color wheel, saved palette swatches, patterned paper presets, zoom, undo/redo, eraser, lasso selection, duplicate/delete, sound toggle, PNG/WebM/JSON export, and local autosave.
+- Animate mode with frame timeline, add/delete/duplicate-style workflow, draggable frame ordering, playback, loop/FPS controls, onion skinning, PNG/WebM/JSON export, and layers panel.
 
 ## User preferences
 

@@ -1,0 +1,1 @@
+- [Motion export constraint](motion-export.md) — workspace package installs reject adding dependencies at the monorepo root; keep motion export browser-native unless using a workspace-aware install path.
