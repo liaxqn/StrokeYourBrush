@@ -8,7 +8,7 @@ import { ArrowUpRight, Brush, ChevronLeft, Circle, Copy, Download, FileDown, Fil
 
 type Point = { x: number; y: number };
 type Stroke = { points: Point[]; color: string; size: number; brush: BrushKind };
-type BrushKind = 'ink' | 'pencil' | 'marker' | 'sprout' | 'dotted' | 'spring' | 'neon' | 'rainbow';
+type BrushKind = 'ink' | 'pencil' | 'marker' | 'sprout' | 'dotted' | 'spring' | 'neon' | 'rainbow' | 'clean' | 'soft' | 'pixel';
 type ToolKind = 'brush' | 'eraser' | 'lasso';
 type CanvasBackground = { name: string; color: string; pattern: 'solid' | 'grid' | 'gradient' };
 
@@ -30,6 +30,12 @@ const brushes: { id: BrushKind; label: string; sub: string }[] = [
   { id: 'spring', label: 'Spring line', sub: 'bouncy energy' },
   { id: 'neon', label: 'Neon glow', sub: 'light after dark' },
   { id: 'rainbow', label: 'Rainbow ribbon', sub: 'color in motion' },
+];
+const frameBrushes: { id: BrushKind; label: string; sub: string }[] = [
+  { id: 'clean', label: 'Clean pen', sub: 'steady + clear' },
+  { id: 'soft', label: 'Soft pencil', sub: 'smooth + quiet' },
+  { id: 'pixel', label: 'Pixel trail', sub: 'crisp + dotted' },
+  { id: 'marker', label: 'Flat marker', sub: 'solid + simple' },
 ];
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -68,7 +74,7 @@ function playBrushSound(brush: BrushKind) {
   const context = new AudioContextClass();
   const oscillator = context.createOscillator();
   const gain = context.createGain();
-  const frequencies: Record<BrushKind, number> = { ink: 210, pencil: 130, marker: 175, sprout: 330, dotted: 490, spring: 270, neon: 620, rainbow: 380 };
+  const frequencies: Record<BrushKind, number> = { ink: 210, pencil: 130, marker: 175, sprout: 330, dotted: 490, spring: 270, neon: 620, rainbow: 380, clean: 190, soft: 120, pixel: 430 };
   oscillator.type = brush === 'neon' ? 'sine' : brush === 'pencil' ? 'triangle' : 'square';
   oscillator.frequency.value = frequencies[brush];
   gain.gain.setValueAtTime(0.035, context.currentTime);
@@ -147,7 +153,7 @@ function Landing() {
   </div>;
 }
 
-function SketchCanvas({ strokes, background, brush, color, size, tool, selectedIndices, onSelection, onMoveSelection, onErase, onStroke, canvasRef, onionStrokes = [], zoom = 100 }: { strokes: Stroke[]; background: CanvasBackground; brush: BrushKind; color: string; size: number; tool: ToolKind; selectedIndices: number[]; onSelection: (indices: number[]) => void; onMoveSelection: (delta: Point) => void; onErase: (index: number) => void; onStroke: (stroke: Stroke) => void; canvasRef: RefObject<HTMLCanvasElement | null>; onionStrokes?: Stroke[]; zoom?: number }) {
+function SketchCanvas({ strokes, background, brush, color, size, tool, selectedIndices, onSelection, onMoveSelection, onErase, onStroke, canvasRef, onionStrokes = [], zoom = 100, wiggle = true }: { strokes: Stroke[]; background: CanvasBackground; brush: BrushKind; color: string; size: number; tool: ToolKind; selectedIndices: number[]; onSelection: (indices: number[]) => void; onMoveSelection: (delta: Point) => void; onErase: (index: number) => void; onStroke: (stroke: Stroke) => void; canvasRef: RefObject<HTMLCanvasElement | null>; onionStrokes?: Stroke[]; zoom?: number; wiggle?: boolean }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const drawingRef = useRef(false);
   const currentRef = useRef<Point[]>([]);
@@ -203,18 +209,19 @@ function SketchCanvas({ strokes, background, brush, color, size, tool, selectedI
       ctx.lineWidth = stroke.size;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      ctx.setLineDash(stroke.brush === 'pencil' ? [1, 3] : stroke.brush === 'sprout' ? [1, 8] : stroke.brush === 'dotted' ? [2, 8] : []);
+      ctx.setLineDash(stroke.brush === 'pencil' || stroke.brush === 'soft' ? [1, 3] : stroke.brush === 'sprout' ? [1, 8] : stroke.brush === 'dotted' || stroke.brush === 'pixel' ? [2, 8] : []);
+      ctx.lineCap = stroke.brush === 'pixel' ? 'butt' : 'round';
       if (stroke.brush === 'neon') {
         ctx.shadowColor = stroke.color;
         ctx.shadowBlur = Math.max(8, stroke.size * 1.5);
       }
       ctx.beginPath();
       stroke.points.forEach((point, pointIndex) => {
-        const wobble = stroke.brush === 'ink' || stroke.brush === 'sprout' || stroke.brush === 'spring'
+        const wobble = wiggle && (stroke.brush === 'ink' || stroke.brush === 'sprout' || stroke.brush === 'spring')
           ? Math.sin(pulse * (stroke.brush === 'spring' ? .09 : .045) + pointIndex * 1.7 + strokeIndex) * (stroke.brush === 'spring' ? 3.3 : stroke.size > 8 ? .7 : 1.7)
-          : stroke.brush === 'neon' ? Math.sin(pulse * .07 + pointIndex) * 1.1 : 0;
+          : wiggle && stroke.brush === 'neon' ? Math.sin(pulse * .07 + pointIndex) * 1.1 : 0;
         const x = point.x + wobble + offset;
-        const y = point.y + Math.cos(pulse * (stroke.brush === 'spring' ? .065 : .035) + pointIndex) * (stroke.brush === 'sprout' ? 1.4 : stroke.brush === 'spring' ? 2 : .35);
+        const y = point.y + (wiggle ? Math.cos(pulse * (stroke.brush === 'spring' ? .065 : .035) + pointIndex) * (stroke.brush === 'sprout' ? 1.4 : stroke.brush === 'spring' ? 2 : .35) : 0);
         pointIndex === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       });
       ctx.stroke();
@@ -228,6 +235,9 @@ function SketchCanvas({ strokes, background, brush, color, size, tool, selectedI
     });
     paint(onionStrokes, .15, 4);
     paint(strokes);
+    if (tool === 'brush' && currentRef.current.length) {
+      paint([{ points: currentRef.current, color, size, brush }], .92);
+    }
     if (selectedIndices.length) {
       ctx.save();
       ctx.strokeStyle = '#ef5b67';
@@ -246,7 +256,7 @@ function SketchCanvas({ strokes, background, brush, color, size, tool, selectedI
       });
       ctx.restore();
     }
-  }, [background, canvasRef, onionStrokes, pulse, strokes]);
+  }, [background, brush, canvasRef, color, onionStrokes, pulse, size, strokes, tool, wiggle]);
   useEffect(() => {
     drawScene();
     const observer = new ResizeObserver(drawScene);
@@ -282,7 +292,14 @@ function SketchCanvas({ strokes, background, brush, color, size, tool, selectedI
       lastPointRef.current = point;
       return;
     }
-    currentRef.current.push(point);
+    const previous = currentRef.current[currentRef.current.length - 1] || point;
+    const distance = Math.hypot(point.x - previous.x, point.y - previous.y);
+    const steps = Math.max(1, Math.ceil(distance / 4));
+    for (let step = 1; step <= steps; step += 1) {
+      const progress = step / steps;
+      currentRef.current.push({ x: previous.x + (point.x - previous.x) * progress, y: previous.y + (point.y - previous.y) * progress });
+    }
+    lastPointRef.current = point;
     if (tool === 'eraser') {
       const hitIndex = strokes.findIndex((stroke) => stroke.points.some((strokePoint) => Math.hypot(strokePoint.x - point.x, strokePoint.y - point.y) < Math.max(12, size * 1.6)));
       if (hitIndex >= 0) onErase(hitIndex);
@@ -299,6 +316,7 @@ function SketchCanvas({ strokes, background, brush, color, size, tool, selectedI
     if (tool === 'lasso') onSelection(strokes.map((stroke, index) => strokeIsInside(stroke, currentRef.current) ? index : -1).filter((index) => index >= 0));
     if (tool === 'brush' && currentRef.current.length > 1) onStroke({ points: currentRef.current, color, size, brush });
     currentRef.current = [];
+    lastPointRef.current = null;
   };
   return <div ref={wrapRef} className="canvas-frame relative h-full min-h-[360px] w-full overflow-hidden rounded-[18px] border border-[hsl(var(--border))]" style={{ background: background.color }}>
     <canvas ref={canvasRef} className={`absolute inset-0 h-full w-full touch-none ${tool === 'lasso' ? 'cursor-crosshair' : tool === 'eraser' ? 'cursor-cell' : 'cursor-crosshair'}`} style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'center' }} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerUp} aria-label="Drawing canvas" />
@@ -372,11 +390,12 @@ function ColorWheel({ color, setColor }: { color: string; setColor: (value: stri
   </div>;
 }
 
-function BrushPanel({ brush, setBrush, color, setColor, size, setSize, background, setBackground, tool, setTool, savedPalette, addPaletteColor }: { brush: BrushKind; setBrush: (value: BrushKind) => void; color: string; setColor: (value: string) => void; size: number; setSize: (value: number) => void; background: CanvasBackground; setBackground: (value: CanvasBackground) => void; tool: ToolKind; setTool: (value: ToolKind) => void; savedPalette: string[]; addPaletteColor: () => void }) {
+function BrushPanel({ mode, brush, setBrush, color, setColor, size, setSize, background, setBackground, tool, setTool, savedPalette, addPaletteColor }: { mode: 'draw' | 'animate'; brush: BrushKind; setBrush: (value: BrushKind) => void; color: string; setColor: (value: string) => void; size: number; setSize: (value: number) => void; background: CanvasBackground; setBackground: (value: CanvasBackground) => void; tool: ToolKind; setTool: (value: ToolKind) => void; savedPalette: string[]; addPaletteColor: () => void }) {
+  const availableBrushes = mode === 'animate' ? frameBrushes : brushes;
   return <aside className="w-full shrink-0 border-b border-[hsl(var(--border))] bg-[hsl(var(--card)/.43)] p-4 lg:w-[215px] lg:border-b-0 lg:border-r">
     <div className="mb-6"><p className="mono mb-3 text-[10px] uppercase tracking-[.15em] text-[hsl(var(--muted-foreground))]">Tools</p><div className="grid grid-cols-3 gap-2"><button type="button" onClick={() => setTool('brush')} className={`press rounded-xl border px-2 py-2 text-[11px] ${tool === 'brush' ? 'border-[hsl(var(--accent)/.5)] bg-[hsl(var(--accent)/.1)] text-[hsl(var(--accent))]' : 'border-transparent hover:border-[hsl(var(--border))]'}`}><Brush className="mx-auto mb-1" size={15} />Brush</button><button type="button" onClick={() => setTool('eraser')} className={`press rounded-xl border px-2 py-2 text-[11px] ${tool === 'eraser' ? 'border-[hsl(var(--accent)/.5)] bg-[hsl(var(--accent)/.1)] text-[hsl(var(--accent))]' : 'border-transparent hover:border-[hsl(var(--border))]'}`}><Trash2 className="mx-auto mb-1" size={15} />Erase</button><button type="button" onClick={() => setTool('lasso')} className={`press rounded-xl border px-2 py-2 text-[11px] ${tool === 'lasso' ? 'border-[hsl(var(--accent)/.5)] bg-[hsl(var(--accent)/.1)] text-[hsl(var(--accent))]' : 'border-transparent hover:border-[hsl(var(--border))]'}`}><Pencil className="mx-auto mb-1" size={15} />Lasso</button></div></div>
-    <div className="mb-6"><p className="mono mb-3 text-[10px] uppercase tracking-[.15em] text-[hsl(var(--muted-foreground))]">Brush personality</p><div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
-      {brushes.map((item) => <button type="button" key={item.id} onClick={() => setBrush(item.id)} className={`press flex items-center gap-3 rounded-xl border p-2.5 text-left ${brush === item.id ? 'border-[hsl(var(--accent)/.5)] bg-[hsl(var(--accent)/.1)]' : 'border-transparent hover:border-[hsl(var(--border))]'}`}><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--muted))]"><Brush size={15} className={item.id === 'sprout' || item.id === 'neon' || item.id === 'rainbow' ? 'text-[hsl(var(--accent))]' : ''} /></span><span><span className="block text-[12px] font-600">{item.label}</span><span className="block text-[10px] text-[hsl(var(--muted-foreground))]">{item.sub}</span></span></button>)}
+     <div className="mb-6"><p className="mono mb-3 text-[10px] uppercase tracking-[.15em] text-[hsl(var(--muted-foreground))]">{mode === 'animate' ? 'Frame brushes' : 'Brush personality'}</p><div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+       {availableBrushes.map((item) => <button type="button" key={item.id} onClick={() => setBrush(item.id)} className={`press flex items-center gap-3 rounded-xl border p-2.5 text-left ${brush === item.id ? 'border-[hsl(var(--accent)/.5)] bg-[hsl(var(--accent)/.1)]' : 'border-transparent hover:border-[hsl(var(--border))]'}`}><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--muted))]"><Brush size={15} className={item.id === 'sprout' || item.id === 'neon' || item.id === 'rainbow' ? 'text-[hsl(var(--accent))]' : ''} /></span><span><span className="block text-[12px] font-600">{item.label}</span><span className="block text-[10px] text-[hsl(var(--muted-foreground))]">{item.sub}</span></span></button>)}
     </div></div>
     <div className="mb-6"><p className="mono mb-3 text-[10px] uppercase tracking-[.15em] text-[hsl(var(--muted-foreground))]">Color wheel</p><ColorWheel color={color} setColor={setColor} /><div className="flex flex-wrap gap-2">{[...palette, ...savedPalette].map((swatch, index) => <button type="button" key={`${swatch}-${index}`} aria-label={`Choose color ${swatch}`} onClick={() => setColor(swatch)} className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 ${color === swatch ? 'scale-110 border-[hsl(var(--foreground))] shadow-[0_0_0_2px_hsl(var(--card))]' : 'border-transparent'}`} style={{ background: swatch }} />)}<button type="button" onClick={addPaletteColor} className="flex h-7 w-7 items-center justify-center rounded-full border border-dashed border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]" aria-label="Save current color to palette">+</button></div></div>
     <div className="mb-6"><div className="mb-2 flex justify-between"><p className="mono text-[10px] uppercase tracking-[.15em] text-[hsl(var(--muted-foreground))]">Weight</p><span className="mono text-[10px]">{size}px</span></div><input aria-label="Brush weight" type="range" min="2" max="34" value={size} onChange={(event) => setSize(Number(event.target.value))} className="w-full accent-[hsl(var(--accent))]" /></div>
@@ -390,7 +409,7 @@ function Toolbar({ mode, strokes, selectedIndices, redo, undo, setZoom, zoom, cl
 
 function Workspace({ mode }: { mode: 'draw' | 'animate' }) {
   const [, navigate] = useLocation();
-  const [brush, setBrush] = useState<BrushKind>('ink');
+  const [brush, setBrush] = useState<BrushKind>(mode === 'animate' ? 'clean' : 'ink');
   const [color, setColor] = useState(palette[0]);
   const [size, setSize] = useState(7);
   const [background, setBackground] = useState(backgrounds[0]);
@@ -533,11 +552,11 @@ function Workspace({ mode }: { mode: 'draw' | 'animate' }) {
   return <div className="grain flex min-h-[100dvh] flex-col">
     <TopBar mode={mode} />
     <div className="flex flex-1 flex-col lg:flex-row">
-       <BrushPanel brush={brush} setBrush={setBrush} color={color} setColor={setColor} size={size} setSize={setSize} background={background} setBackground={setBackground} tool={tool} setTool={setTool} savedPalette={savedPalette} addPaletteColor={addPaletteColor} />
+       <BrushPanel mode={mode} brush={brush} setBrush={setBrush} color={color} setColor={setColor} size={size} setSize={setSize} background={background} setBackground={setBackground} tool={tool} setTool={setTool} savedPalette={savedPalette} addPaletteColor={addPaletteColor} />
       <main className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-5 md:px-7"><div><button type="button" onClick={() => navigate('/')} className="mb-2 flex items-center gap-1 text-[11px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"><ChevronLeft size={14} /> notebook</button><h1 className="text-[25px] font-700 tracking-[-.05em]">{mode === 'draw' ? 'A fresh page' : 'Make it move'}</h1></div><span className="mono rounded-full border border-[hsl(var(--border))] px-3 py-1.5 text-[10px] uppercase tracking-[.12em] text-[hsl(var(--muted-foreground))]">{mode === 'draw' ? 'draw / live ink' : `${frames.length} frames / ${fps} fps`}</span></div>
          <Toolbar mode={mode} strokes={strokes} selectedIndices={selectedIndices} undo={undo} redo={redo} zoom={zoom} setZoom={setZoom} clear={clear} exportPng={exportPng} exportMotion={exportMotion} saveJson={saveJson} loadJson={loadJson} duplicateSelection={duplicateSelection} deleteSelection={deleteSelection} soundOn={soundOn} setSoundOn={setSoundOn} />
-         <div className="workspace-grid flex min-h-[460px] flex-1 flex-col gap-4 p-4 md:p-7"><div className="mx-auto h-[min(62vh,610px)] min-h-[390px] w-full max-w-[950px]"><SketchCanvas strokes={strokes} background={background} brush={brush} color={color} size={size} tool={tool} selectedIndices={selectedIndices} onSelection={setSelectedIndices} onMoveSelection={moveSelection} onErase={eraseStroke} onStroke={addStroke} canvasRef={canvasRef} onionStrokes={mode === 'animate' && onion ? previousFrame : []} zoom={zoom} /></div>
+          <div className="workspace-grid flex min-h-[460px] flex-1 flex-col gap-4 p-4 md:p-7"><div className="mx-auto h-[min(62vh,610px)] min-h-[390px] w-full max-w-[950px]"><SketchCanvas strokes={strokes} background={background} brush={brush} color={color} size={size} tool={tool} selectedIndices={selectedIndices} onSelection={setSelectedIndices} onMoveSelection={moveSelection} onErase={eraseStroke} onStroke={addStroke} canvasRef={canvasRef} onionStrokes={mode === 'animate' && onion ? previousFrame : []} zoom={zoom} wiggle={mode === 'draw'} /></div>
           {mode === 'animate' ? <div className="mx-auto w-full max-w-[950px] rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card)/.75)] p-3 shadow-[0_4px_18px_hsl(var(--foreground)/.04)]"><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><button type="button" onClick={() => setPlaying(!playing)} className="press flex h-8 items-center gap-1.5 rounded-lg bg-[hsl(var(--primary))] px-3 text-[11px] font-600 text-[hsl(var(--primary-foreground))]">{playing ? <Pause size={13} /> : <Play size={13} />} {playing ? 'Pause' : 'Play'}</button><button type="button" onClick={addFrame} className="press flex items-center gap-1.5 rounded-lg border border-[hsl(var(--border))] px-3 py-1.5 text-[11px] font-600"><Plus size={13} /> Frame</button><button type="button" onClick={deleteFrame} disabled={frames.length <= 1} className="press flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] text-[hsl(var(--muted-foreground))] disabled:opacity-30"><Trash2 size={13} /> Delete</button></div><div className="flex items-center gap-2"><button type="button" onClick={() => setOnion(!onion)} className={`press flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${onion ? 'bg-[hsl(var(--accent)/.12)] text-[hsl(var(--accent))]' : 'text-[hsl(var(--muted-foreground))]'}`}><Layers3 size={13} /> Onion skin</button><button type="button" onClick={exportVideoNote} className="press flex items-center gap-1.5 rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-[11px]"><FileDown size={13} /> GIF / video</button></div></div><div className="flex gap-2 overflow-x-auto pb-1">{frames.map((frame, index) => <button type="button" key={`frame-${index}`} onClick={() => { setFrameIndex(index); setStrokes(frame); }} className={`group relative min-w-[86px] rounded-xl border p-1 text-left ${frameIndex === index ? 'border-[hsl(var(--accent))] bg-[hsl(var(--accent)/.08)]' : 'border-[hsl(var(--border))]'}`}><div className="relative h-14 overflow-hidden rounded-lg" style={{ background: background.color }}><div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(135deg, transparent 45%, #ef5b67 46%, #ef5b67 51%, transparent 52%)' }} />{frame.length > 0 && <span className="absolute bottom-1 right-1 h-2 w-2 rounded-full bg-[hsl(var(--accent))]" />}</div><span className="mono px-1 text-[9px] text-[hsl(var(--muted-foreground))]">frame {String(index + 1).padStart(2, '0')}</span></button>)}</div></div> : <div className="mx-auto flex w-full max-w-[950px] items-center justify-between rounded-xl border border-dashed border-[hsl(var(--border))] px-4 py-3 text-[11px] text-[hsl(var(--muted-foreground))]"><span className="flex items-center gap-2"><WandSparkles size={15} className="text-[hsl(var(--accent))]" /> Tip: try a new brush mid-sketch. Contrast makes happy accidents.</span><span className="mono hidden sm:block">{strokes.length} mark{strokes.length === 1 ? '' : 's'}</span></div>}</div>
       </main>
       <aside className="hidden w-[182px] shrink-0 border-l border-[hsl(var(--border))] bg-[hsl(var(--card)/.28)] p-4 xl:block"><p className="mono mb-3 text-[10px] uppercase tracking-[.15em] text-[hsl(var(--muted-foreground))]">Layers</p>{layers.map((layer, index) => <div key={layer} className="mb-2 flex items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card)/.5)] px-2.5 py-2 text-[11px]"><span className={`h-2 w-2 rounded-full ${index === 0 ? 'bg-[hsl(var(--accent))]' : 'bg-[hsl(var(--secondary))]'}`} />{layer}</div>)}<button type="button" onClick={() => setLayers((items) => [...items, `Layer ${items.length + 1}`])} className="mt-1 flex items-center gap-1 text-[11px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"><Plus size={13} /> Add layer</button><div className="mt-12 border-t border-[hsl(var(--border))] pt-4"><p className="mono text-[9px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Autosaved</p><p className="mt-2 text-[12px] leading-5">This sketch lives in this browser until you export it.</p></div></aside>
