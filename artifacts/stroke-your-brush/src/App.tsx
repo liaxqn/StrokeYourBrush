@@ -444,6 +444,8 @@ function Workspace({ mode }: { mode: 'draw' | 'animate' }) {
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(true);
   const [fps, setFps] = useState(4);
+  const [exportDuration, setExportDuration] = useState(5);
+  const [exporting, setExporting] = useState(false);
   const [onion, setOnion] = useState(true);
   const [layers, setLayers] = useState(['Sketch marks']);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -528,17 +530,26 @@ function Workspace({ mode }: { mode: 'draw' | 'animate' }) {
   };
   const exportMotion = () => {
     const canvas = canvasRef.current;
+    if (exporting) return;
     if (!canvas || !('captureStream' in canvas) || typeof MediaRecorder === 'undefined') {
       window.alert('Motion export needs a browser with MediaRecorder support.');
       return;
     }
-    const stream = canvas.captureStream(24);
+    const wasPlaying = playing;
+    const stream = canvas.captureStream(fps);
     const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
     const chunks: Blob[] = [];
     recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
-    recorder.onstop = () => downloadBlob(new Blob(chunks, { type: 'video/webm' }), `stroke-your-brush-${mode}-motion.webm`);
+    recorder.onstop = () => {
+      stream.getTracks().forEach((track) => track.stop());
+      downloadBlob(new Blob(chunks, { type: 'video/webm' }), `stroke-your-brush-${mode}-motion-${exportDuration}s.webm`);
+      setExporting(false);
+      if (mode === 'animate') setPlaying(wasPlaying);
+    };
+    setExporting(true);
+    if (mode === 'animate') setPlaying(true);
     recorder.start();
-    window.setTimeout(() => recorder.stop(), 2200);
+    window.setTimeout(() => recorder.stop(), Math.max(3, exportDuration) * 1000);
   };
   const exportVideoNote = exportMotion;
   const reorderFrames = (from: number, to: number) => {
@@ -574,6 +585,19 @@ function Workspace({ mode }: { mode: 'draw' | 'animate' }) {
       <main className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-5 md:px-7"><div><button type="button" onClick={() => navigate('/')} className="mb-2 flex items-center gap-1 text-[11px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"><ChevronLeft size={14} /> notebook</button><h1 className="text-[25px] font-700 tracking-[-.05em]">{mode === 'draw' ? 'A fresh page' : 'Make it move'}</h1></div><span className="mono rounded-full border border-[hsl(var(--border))] px-3 py-1.5 text-[10px] uppercase tracking-[.12em] text-[hsl(var(--muted-foreground))]">{mode === 'draw' ? 'draw / live ink' : `${frames.length} frames / ${fps} fps`}</span></div>
          <Toolbar mode={mode} strokes={strokes} selectedIndices={selectedIndices} undo={undo} redo={redo} zoom={zoom} setZoom={setZoom} clear={clear} exportPng={exportPng} exportMotion={exportMotion} saveJson={saveJson} loadJson={loadJson} duplicateSelection={duplicateSelection} deleteSelection={deleteSelection} soundOn={soundOn} setSoundOn={setSoundOn} />
+         {mode === 'animate' && <div className="mx-auto flex w-full max-w-[950px] flex-wrap items-center justify-end gap-2 px-1 pb-1">
+          <label className="mono flex items-center gap-1.5 text-[10px] uppercase tracking-[.1em] text-[hsl(var(--muted-foreground))]">FPS
+           <select value={fps} onChange={(event) => setFps(Number(event.target.value))} className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-2 py-1.5 text-[11px] normal-case tracking-normal text-[hsl(var(--foreground))]" aria-label="Animation frames per second">
+            {[1, 2, 4, 6, 8, 12, 15, 24, 30].map((value) => <option key={value} value={value}>{value}</option>)}
+           </select>
+          </label>
+          <label className="mono flex items-center gap-1.5 text-[10px] uppercase tracking-[.1em] text-[hsl(var(--muted-foreground))]">Export length
+           <select value={exportDuration} onChange={(event) => setExportDuration(Math.max(3, Number(event.target.value)))} className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-2 py-1.5 text-[11px] normal-case tracking-normal text-[hsl(var(--foreground))]" aria-label="Motion export length">
+            {[3, 5, 8, 10, 15].map((value) => <option key={value} value={value}>{value}s</option>)}
+           </select>
+          </label>
+          <span className="text-[10px] text-[hsl(var(--muted-foreground))]">Playback and export use these settings.</span>
+         </div>}
           <div className="workspace-grid flex min-h-[460px] flex-1 flex-col gap-4 p-4 md:p-7"><div className="mx-auto h-[min(62vh,610px)] min-h-[390px] w-full max-w-[950px]"><SketchCanvas strokes={strokes} background={background} brush={brush} color={color} size={size} tool={tool} selectedIndices={selectedIndices} onSelection={setSelectedIndices} onMoveSelection={moveSelection} onErase={eraseStroke} onStroke={addStroke} canvasRef={canvasRef} onionStrokes={mode === 'animate' && onion ? previousFrame : []} zoom={zoom} wiggle={mode === 'draw'} /></div>
           {mode === 'animate' ? <div className="mx-auto w-full max-w-[950px] rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card)/.75)] p-3 shadow-[0_4px_18px_hsl(var(--foreground)/.04)]"><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><button type="button" onClick={() => setPlaying(!playing)} className="press flex h-8 items-center gap-1.5 rounded-lg bg-[hsl(var(--primary))] px-3 text-[11px] font-600 text-[hsl(var(--primary-foreground))]">{playing ? <Pause size={13} /> : <Play size={13} />} {playing ? 'Pause' : 'Play'}</button><button type="button" onClick={addFrame} className="press flex items-center gap-1.5 rounded-lg border border-[hsl(var(--border))] px-3 py-1.5 text-[11px] font-600"><Plus size={13} /> Frame</button><button type="button" onClick={deleteFrame} disabled={frames.length <= 1} className="press flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] text-[hsl(var(--muted-foreground))] disabled:opacity-30"><Trash2 size={13} /> Delete</button></div><div className="flex items-center gap-2"><button type="button" onClick={() => setOnion(!onion)} className={`press flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${onion ? 'bg-[hsl(var(--accent)/.12)] text-[hsl(var(--accent))]' : 'text-[hsl(var(--muted-foreground))]'}`}><Layers3 size={13} /> Onion skin</button><button type="button" onClick={exportVideoNote} className="press flex items-center gap-1.5 rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-[11px]"><FileDown size={13} /> GIF / video</button></div></div><div className="flex gap-2 overflow-x-auto pb-1">{frames.map((frame, index) => <button type="button" key={`frame-${index}`} onClick={() => { setFrameIndex(index); setStrokes(frame); }} className={`group relative min-w-[86px] rounded-xl border p-1 text-left ${frameIndex === index ? 'border-[hsl(var(--accent))] bg-[hsl(var(--accent)/.08)]' : 'border-[hsl(var(--border))]'}`}><div className="relative h-14 overflow-hidden rounded-lg" style={{ background: background.color }}><div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(135deg, transparent 45%, #ef5b67 46%, #ef5b67 51%, transparent 52%)' }} />{frame.length > 0 && <span className="absolute bottom-1 right-1 h-2 w-2 rounded-full bg-[hsl(var(--accent))]" />}</div><span className="mono px-1 text-[9px] text-[hsl(var(--muted-foreground))]">frame {String(index + 1).padStart(2, '0')}</span></button>)}</div></div> : <div className="mx-auto flex w-full max-w-[950px] items-center justify-between rounded-xl border border-dashed border-[hsl(var(--border))] px-4 py-3 text-[11px] text-[hsl(var(--muted-foreground))]"><span className="flex items-center gap-2"><WandSparkles size={15} className="text-[hsl(var(--accent))]" /> Tip: try a new brush mid-sketch. Contrast makes happy accidents.</span><span className="mono hidden sm:block">{strokes.length} mark{strokes.length === 1 ? '' : 's'}</span></div>}</div>
       </main>
