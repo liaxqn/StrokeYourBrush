@@ -286,3 +286,140 @@ a { color: inherit; text-decoration: none; }
     min-height: 210px;
   }
 }
+
+@media (orientation: portrait) and (max-width: 760px) {
+  .workspace-shell {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr) 112px;
+    align-items: stretch;
+  }
+  .workspace-tools {
+    grid-column: 1;
+    grid-row: 1;
+    max-height: calc(100dvh - 68px);
+    overflow-y: auto;
+    padding: 10px 8px;
+    border-right: 1px solid hsl(var(--border));
+    border-bottom: 0;
+  }
+  .workspace-tools .tool-controls,
+  .workspace-tools .brush-controls,
+  .workspace-tools .weight-controls {
+    margin-bottom: 14px;
+  }
+  .workspace-tools .tool-controls > p,
+  .workspace-tools .brush-controls > p,
+  .workspace-tools .paper-controls > p,
+  .workspace-tools .weight-controls p {
+    font-size: 8px;
+    letter-spacing: .08em;
+  }
+  .workspace-tools .tool-controls .grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .workspace-tools .tool-controls button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 7px;
+    padding: 7px 5px;
+  }
+  .workspace-tools .tool-controls button svg {
+    margin: 0;
+  }
+  .workspace-tools .brush-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 5px;
+    overflow: visible;
+  }
+  .workspace-tools .brush-item {
+    min-width: 0;
+    gap: 5px;
+    padding: 6px 4px;
+  }
+  .workspace-tools .brush-item > span:last-child {
+    min-width: 0;
+  }
+  .workspace-tools .brush-item > span:last-child span:first-child {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .workspace-tools .brush-item > span:last-child span:last-child {
+    font-size: 8px;
+    white-space: nowrap;
+  }
+  .workspace-tools .weight-controls {
+    display: block;
+  }
+  .workspace-tools .paper-controls {
+    display: block;
+  }
+  .workspace-tools .paper-controls > p {
+    margin-bottom: 8px;
+  }
+  .workspace-tools .paper-controls .flex {
+    gap: 4px;
+  }
+  .workspace-tools .paper-controls button {
+    height: 22px;
+    width: 22px;
+  }
+  .workspace-shell > main {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+  }
+  .workspace-shell > .workspace-inspector {
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 0;
+    max-height: calc(100dvh - 68px);
+    overflow-y: auto;
+    padding: 10px 8px;
+    border-top: 0;
+    border-left: 1px solid hsl(var(--border));
+  }
+  .workspace-inspector .inspector-card .flex {
+    justify-content: center;
+    gap: 4px;
+  }
+  .workspace-inspector section {
+    margin-top: 14px;
+    padding-top: 10px;
+  }
+  .workspace-inspector p,
+  .workspace-inspector button {
+    font-size: 9px;
+  }
+  .workspace-shell main > div:first-child {
+    padding: 12px 8px 6px;
+  }
+  .workspace-shell main > div:first-child h1 {
+    font-size: 18px;
+  }
+  .workspace-shell main > div:first-child .mono {
+    font-size: 7px;
+  }
+  .workspace-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .workspace-toolbar > div {
+    flex-shrink: 0;
+  }
+  .workspace-grid {
+    min-height: 0;
+    padding: 8px 6px 14px;
+  }
+  .workspace-grid > div:first-child {
+    height: min(62vh, 560px);
+    min-height: 300px;
+  }
+}
