@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "sUIxRhi41GTMI7EXv114P"
+uri = "file://artifacts/stroke-your-brush/stroke-your-brush-source.zip"
+type = "unspecified"
+title = "StrokeYourBrush source code"
+description = "Downloadable ZIP containing the React/Vite source files, mobile styling, configuration, public assets, and setup README. Dependencies and build output are excluded."
+logical_id = "1c404ea1-486a-4b31-b2ac-f2de81e68921"
+content_hash = "sha256:9d02c475d5b6774ee0ecc68cd23ce1708c7ea0596528792f6304c1b09b63d68c"
+size = 90688
+mtime_ms = 1788676016525
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:4f84c222-bb31-435d-ada9-d49f35035dc5/1c404ea1-486a-4b31-b2ac-f2de81e68921/31980ccb-294e-4568-aa98-333a88b7aa3a"
+storage_version_token = "1788676025612738"
+content_type = "application/octet-stream"
