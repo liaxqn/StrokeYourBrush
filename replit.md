@@ -36,8 +36,9 @@ StrokeYourBrush is a client-side creative studio for drawing alive wiggly marks 
 ## Product
 
 - Landing page with direct navigation into Draw and Animate modes.
-- Draw mode with eight animated brush personalities, color wheel, saved palette swatches, patterned paper presets, zoom, undo/redo, eraser, lasso selection, duplicate/delete, sound toggle, PNG/WebM/JSON export, and local autosave.
+- Draw mode with eight animated brush personalities, saved palette swatches, patterned paper presets, zoom, undo/redo, eraser, lasso selection, duplicate/delete, sound toggle, PNG/WebM/JSON export, and local autosave.
 - Animate mode with frame timeline, add/delete/duplicate-style workflow, playback, onion skinning, dedicated non-wiggly frame brushes, PNG/WebM/JSON export, and layers panel.
+- Portrait phone layouts keep tools close to the canvas while placing the color wheel and layers in a right-side inspector rail; “Save wiggle” downloads the animated canvas as a WebM file for viewing on-device.
 
 ## User preferences
 

@@ -99,4 +99,109 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 760px) {
   .workspace-grid { background-size: 18px 18px; }
   .canvas-frame { box-shadow: 6px 8px 0 hsl(172 30% 15% / .1), 0 0 0 1px hsl(172 30% 15% / .08); }
+  .workspace-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 112px;
+    align-items: start;
+  }
+  .workspace-tools {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    padding: 12px;
+  }
+  .workspace-tools .tool-controls,
+  .workspace-tools .brush-controls,
+  .workspace-tools .weight-controls {
+    margin-bottom: 12px;
+  }
+  .workspace-tools .brush-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: thin;
+  }
+  .workspace-tools .brush-item {
+    min-width: 142px;
+    padding: 8px;
+  }
+  .workspace-tools .paper-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .workspace-tools .paper-controls > p {
+    margin-bottom: 0;
+  }
+  .workspace-shell > main {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+  }
+  .workspace-shell > .workspace-inspector {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    padding: 12px 8px;
+    border-top: 0;
+    border-left: 1px solid hsl(var(--border));
+  }
+  .workspace-inspector .inspector-card {
+    min-width: 0;
+  }
+  .workspace-inspector .inspector-card .flex {
+    justify-content: center;
+  }
+  .workspace-inspector section {
+    margin-top: 16px;
+    padding-top: 12px;
+  }
+  .workspace-inspector .mt-8 {
+    margin-top: 18px;
+  }
+  .workspace-inspector p,
+  .workspace-inspector button {
+    font-size: 10px;
+  }
+  .workspace-inspector .text-\[12px\] {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+  .workspace-grid {
+    min-height: 0;
+    padding: 12px 10px 18px;
+  }
+  .workspace-grid > div:first-child {
+    height: min(67vh, 560px);
+    min-height: 340px;
+  }
+  .workspace-grid .max-w-\[950px\] {
+    max-width: 100%;
+  }
+  .workspace-shell main > div:first-child {
+    padding: 14px 12px 8px;
+  }
+  .workspace-shell main > div:first-child h1 {
+    font-size: 22px;
+  }
+  .workspace-shell main > div:first-child .mono {
+    font-size: 8px;
+  }
+  .workspace-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .workspace-toolbar > div {
+    min-width: 0;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+  .workspace-shell .flex-wrap {
+    gap: 6px;
+  }
 }
