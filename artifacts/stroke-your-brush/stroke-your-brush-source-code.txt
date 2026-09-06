@@ -23,7 +23,7 @@ type CanvasBackground = { name: string; color: string; pattern: 'solid' | 'grid'
 
 const queryClient = new QueryClient();
 const palette = ['#172f2b', '#ef5b67', '#f49c57', '#f4cf6b', '#5c8c82', '#8c6fb1', '#f6eee0'];
-const backgrounds: CanvasBackground[] = [
+const backgrounds: CanvasBackground[] = 
   { name: 'Paper', color: '#fdf7e9', pattern: 'solid' },
   { name: 'Oat grid', color: '#eee7d6', pattern: 'grid' },
   { name: 'Mint wash', color: '#e6f0e7', pattern: 'gradient' },
